@@ -60,9 +60,6 @@ class Board:
                 rook = piece.left_rook if (diff < 0) else piece.right_rook
                 self.move(rook, rook.moves[-1])
 
-        # Pawn promotion and other special moves...
-        # ... (rest of the existing code)
-
     def valid_move(self, piece, move):
         return move in piece.moves
 
