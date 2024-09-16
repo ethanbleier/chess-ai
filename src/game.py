@@ -2,10 +2,12 @@ import pygame
 
 from const import *
 from board import Board
+from piece import *
 from dragger import Dragger
 from config import Config
 from square import Square
-
+from ai import AI
+import time
 class Game:
 
     def __init__(self):
@@ -14,6 +16,8 @@ class Game:
         self.board = Board()
         self.dragger = Dragger()
         self.config = Config()
+        self.ai = AI(depth=3)
+        self.ai_playing = False
 
     # blit methods
 
@@ -122,3 +126,16 @@ class Game:
 
     def reset(self):
         self.__init__()
+
+    def ai_move(self):
+        print("AI is thinking...")
+        start_time = time.time()
+        best_move = self.ai.get_best_move(self.board)
+        end_time = time.time()
+        print(f"AI took {end_time - start_time:.2f} seconds to decide")
+        if best_move:
+            print(f"AI chose move: {best_move}")
+            self.board.move(best_move.piece, best_move)
+            self.next_turn()
+        else:
+            print("AI couldn't find a valid move")

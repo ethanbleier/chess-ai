@@ -1,10 +1,15 @@
 import pygame
 import sys
+from tqdm import tqdm
+import time
+import threading
 
 from const import *
 from game import Game
 from square import Square
 from move import Move
+from piece import *
+import time
 
 class Main:
 
@@ -20,6 +25,8 @@ class Main:
         game = self.game
         board = self.game.board
         dragger = self.game.dragger
+
+        ai_thread = None
 
         while True:
             # show methods
@@ -84,7 +91,7 @@ class Main:
                         # create possible move
                         initial = Square(dragger.initial_row, dragger.initial_col)
                         final = Square(released_row, released_col)
-                        move = Move(initial, final)
+                        move = Move(initial, final, dragger.piece)
 
                         # valid move ?
                         if board.valid_move(dragger.piece, move):
@@ -119,13 +126,34 @@ class Main:
                         board = self.game.board
                         dragger = self.game.dragger
 
+                    # Add AI toggle with debug print
+                    if event.key == pygame.K_a:
+                        game.ai_playing = not game.ai_playing
+                        print(f"AI playing: {game.ai_playing}")
+
                 # quit application
                 elif event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
             
+            if game.next_player == 'black' and game.ai_playing and ai_thread is None:
+                print("AI's turn")
+                ai_thread = threading.Thread(target=self.ai_turn, args=(game,))
+                ai_thread.start()
+
+            if ai_thread and not ai_thread.is_alive():
+                ai_thread = None
+                game.next_turn()
+
             pygame.display.update()
 
+    def ai_turn(self, game):
+        start_time = time.time()
+        for _ in range(10):
+            time.sleep(0.05)  # Simulated thinking time
+        game.ai_move()
+        end_time = time.time()
+        print(f"AI's turn completed in {end_time - start_time:.2f} seconds")
 
 main = Main()
 main.mainloop()

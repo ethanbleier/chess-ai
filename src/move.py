@@ -1,10 +1,11 @@
-
 class Move:
 
-    def __init__(self, initial, final):
+    def __init__(self, initial, final, piece):
         # initial and final are squares
         self.initial = initial
         self.final = final
+        self.piece = piece
+        self.captured_piece = None  # Add this line
 
     def __str__(self):
         s = ''

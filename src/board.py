@@ -19,11 +19,23 @@ class Board:
         initial = move.initial
         final = move.final
 
-        en_passant_empty = self.squares[final.row][final.col].isempty()
+        # Store the captured piece for undoing
+        move.captured_piece = self.squares[final.row][final.col].piece
 
-        # console board move update
+        # Update piece position
         self.squares[initial.row][initial.col].piece = None
         self.squares[final.row][final.col].piece = piece
+
+        # Move in console
+        piece.moved = True
+
+        # Clear valid moves
+        piece.clear_moves()
+
+        # Set last move
+        self.last_move = move
+
+        en_passant_empty = self.squares[final.row][final.col].isempty()
 
         if isinstance(piece, Pawn):
             # en passant capture
@@ -48,14 +60,8 @@ class Board:
                 rook = piece.left_rook if (diff < 0) else piece.right_rook
                 self.move(rook, rook.moves[-1])
 
-        # move
-        piece.moved = True
-
-        # clear valid moves
-        piece.clear_moves()
-
-        # set last move
-        self.last_move = move
+        # Pawn promotion and other special moves...
+        # ... (rest of the existing code)
 
     def valid_move(self, piece, move):
         return move in piece.moves
@@ -114,9 +120,9 @@ class Board:
                         initial = Square(row, col)
                         final = Square(possible_move_row, col)
                         # create a new move
-                        move = Move(initial, final)
+                        move = Move(initial, final, piece)
 
-                        # check potencial checks
+                        # check potential checks
                         if bool:
                             if not self.in_check(piece, move):
                                 # append new move
@@ -140,9 +146,9 @@ class Board:
                         final_piece = self.squares[possible_move_row][possible_move_col].piece
                         final = Square(possible_move_row, possible_move_col, final_piece)
                         # create a new move
-                        move = Move(initial, final)
+                        move = Move(initial, final, piece)
                         
-                        # check potencial checks
+                        # check potential checks
                         if bool:
                             if not self.in_check(piece, move):
                                 # append new move
@@ -164,7 +170,7 @@ class Board:
                             initial = Square(row, col)
                             final = Square(fr, col-1, p)
                             # create a new move
-                            move = Move(initial, final)
+                            move = Move(initial, final, piece)
                             
                             # check potencial checks
                             if bool:
@@ -185,7 +191,7 @@ class Board:
                             initial = Square(row, col)
                             final = Square(fr, col+1, p)
                             # create a new move
-                            move = Move(initial, final)
+                            move = Move(initial, final, piece)
                             
                             # check potencial checks
                             if bool:
@@ -220,7 +226,7 @@ class Board:
                         final_piece = self.squares[possible_move_row][possible_move_col].piece
                         final = Square(possible_move_row, possible_move_col, final_piece)
                         # create new move
-                        move = Move(initial, final)
+                        move = Move(initial, final, piece)
                         
                         # check potencial checks
                         if bool:
@@ -245,7 +251,7 @@ class Board:
                         final_piece = self.squares[possible_move_row][possible_move_col].piece
                         final = Square(possible_move_row, possible_move_col, final_piece)
                         # create a possible new move
-                        move = Move(initial, final)
+                        move = Move(initial, final, piece)
 
                         # empty = continue looping
                         if self.squares[possible_move_row][possible_move_col].isempty():
@@ -303,7 +309,7 @@ class Board:
                         initial = Square(row, col)
                         final = Square(possible_move_row, possible_move_col) # piece=piece
                         # create new move
-                        move = Move(initial, final)
+                        move = Move(initial, final, piece)
                         # check potencial checks
                         if bool:
                             if not self.in_check(piece, move):
@@ -332,12 +338,12 @@ class Board:
                                 # rook move
                                 initial = Square(row, 0)
                                 final = Square(row, 3)
-                                moveR = Move(initial, final)
+                                moveR = Move(initial, final, left_rook)
 
                                 # king move
                                 initial = Square(row, col)
                                 final = Square(row, 2)
-                                moveK = Move(initial, final)
+                                moveK = Move(initial, final, piece)
 
                                 # check potencial checks
                                 if bool:
@@ -368,12 +374,12 @@ class Board:
                                 # rook move
                                 initial = Square(row, 7)
                                 final = Square(row, 5)
-                                moveR = Move(initial, final)
+                                moveR = Move(initial, final, right_rook)
 
                                 # king move
                                 initial = Square(row, col)
                                 final = Square(row, 6)
-                                moveK = Move(initial, final)
+                                moveK = Move(initial, final, piece)
 
                                 # check potencial checks
                                 if bool:
@@ -454,3 +460,31 @@ class Board:
 
         # king
         self.squares[row_other][4] = Square(row_other, 4, King(color))
+
+    def is_game_over(self):
+        # Check for checkmate or stalemate for both colors
+        for color in ['white', 'black']:
+            has_legal_move = False
+            for row in range(ROWS):
+                for col in range(COLS):
+                    piece = self.squares[row][col].piece
+                    if piece and piece.color == color:
+                        self.calc_moves(piece, row, col, bool=True)
+                        if piece.moves:
+                            has_legal_move = True
+                            break
+                if has_legal_move:
+                    break
+            if not has_legal_move:
+                return True  # Game over: checkmate or stalemate
+        return False  # Game not over
+
+    def undo_move(self):
+        if self.last_move:
+            move = self.last_move
+            # Move the piece back
+            self.move(move.piece, Move(move.final, move.initial, move.piece))
+            # Restore the captured piece, if any
+            self.squares[move.final.row][move.final.col].piece = move.captured_piece
+            # Clear the last move
+            self.last_move = None
